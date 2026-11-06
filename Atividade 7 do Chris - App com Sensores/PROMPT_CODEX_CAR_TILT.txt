@@ -1,0 +1,76 @@
+Crie agora um jogo completo e jogável chamado Car Tilt — Interlagos, de Christian Hollnagel, para a Atividade 7 de Design de Produtos com Tecnologia Embutida. Trabalhe na pasta existente do tablet:
+
+/storage/emulated/0/Documents/Atividade 7 do Chris - App com Sensores
+
+Leia PROPOSTA_CAR_TILT.md nessa pasta. Implemente a proposta, abra o que conseguir executar neste ambiente, corrija os defeitos observados e entregue o jogo em um único arquivo chamado index.html. Quero que o jogador abra um link HTTPS no Chrome de um smartphone Android e dirija com o próprio aparelho. As decisões abaixo resolvem questões de implementação da primeira versão.
+
+1. Arquivo e limites do trabalho
+
+• O único arquivo de produto que você deve criar ou editar na pasta é index.html. Preserve a proposta, este prompt e os arquivos do usuário. Se já existir um index.html do Car Tilt, examine-o e aproveite o que funciona. Se pertencer a outro projeto, informe o conflito antes de sobrescrever.
+• Incorpore CSS, JavaScript, dados do circuito e todos os desenhos no próprio HTML. Use Canvas 2D para a corrida e controles HTML legíveis para os menus. Sem instalação, build, biblioteca externa, fonte remota, sprites baixados, servidor de aplicação, conta de jogador ou telemetria. Arquivos temporários de processamento e testes podem ficar fora da pasta da atividade.
+• O documento deve ser publicável por hospedagem estática HTTPS. Prepare a entrega local. A publicação em uma conta de hospedagem fica para Christian. Na resposta, dê uma orientação curta para publicar somente o index.html, mantendo os dois documentos de trabalho fora do site.
+
+2. O que acontece quando alguém pega o telefone
+
+• Na capa, mostre “Car Tilt”, “Interlagos”, o crédito a Christian Hollnagel, o objetivo “Complete uma volta no menor tempo” e as ações Jogar e Demonstração. Instrução em PT-BR: “Segure o celular deitado. Vire como um volante. Incline para a frente para acelerar e para trás para frear.” Ofereça sensibilidade Suave, Média e Alta; comece em Média.
+• Jogar inicia a leitura de orientação e uma calibração de três segundos na posição confortável da pessoa. Mostre a contagem e dois indicadores pequenos, apenas na calibração ou na pausa, para entender qual movimento vira e qual acelera. O tempo da volta começa na largada, depois da calibração e com o jogo visível.
+• Coloque o carro sobre a reta dos boxes, alinhado pela tangente na direção do S do Senna. Parta do repouso. Com o sinal em neutro o carro conserva a inércia e desacelera aos poucos. O freio reduz a velocidade até zero, sem engatar marcha a ré.
+• Durante a corrida por sensor, a tela fica livre de botões de pilotagem. O tempo e a velocidade permanecem no alto e o minimapa num canto. Dê acesso à pausa por um toque breve no cronômetro, explicado na largada, e pelo teclado quando disponível. Na pausa, ofereça Continuar, Recalibrar e Reiniciar. No resultado, mostre o tempo da volta, o melhor tempo local e as opções de repetir ou recalibrar. Use minutos, segundos e milésimos; armazene o valor numérico em milissegundos.
+
+3. Fazer o aparelho funcionar como volante
+
+• Use deviceorientation. Inicie o pedido de permissão dentro do gesto de Jogar quando DeviceOrientationEvent.requestPermission existir. Inicie a leitura diretamente onde esse método estiver ausente. Considere válida apenas uma amostra com os componentes necessários finitos. Zero é um valor válido. Permissão concedida e objeto de API presente, sozinhos, não demonstram que o sensor enviou dados.
+• Trate separadamente o prazo de dois segundos para receber a primeira leitura e a calibração de três segundos com leituras reais. Conte os dois segundos depois de o usuário responder ao pedido de permissão, se ele aparecer. Com amostras válidas, estime a posição neutra usando várias leituras estáveis; se o aparelho se mover muito, mantenha a calibração aberta com uma instrução breve. Zere os filtros ao recalibrar.
+• Converta a orientação física para eixos relativos à tela e à posição calibrada. Use a orientação efetiva da tela e trate paisagem nos dois lados, incluindo aparelhos cujo ângulo natural já é paisagem. Evite subtrair ângulos de Euler de modo que a passagem por +180°/−180° produza um salto. Pode usar uma transformação de atitude relativa ou projetar a gravidade nos eixos do aparelho. Escolha uma implementação legível e teste seus sinais.
+• Convenção física de aceite, com a tela voltada para o jogador: abaixar a borda direita esterça para a direita; abaixar a esquerda esterça para a esquerda. Inclinar o topo para longe de si acelera; trazê-lo para perto freia. O movimento de volante deve funcionar junto com acelerador e freio. Corrija a orientação se um eixo acionar principalmente o comando do outro. Preserve a posição de repouso particular de cada pessoa.
+• Aplique zona morta, suavização que leve em conta o intervalo entre amostras, curva progressiva e saturação. Como ponto de partida ajustável, experimente zona morta de 3°, esterço máximo com cerca de 25° e curso de pedal de 15° a 20°. Os três níveis alteram o esforço necessário, preservando o neutro. Interrompa um comando vencido se o fluxo de dados parar enquanto a pessoa acelera; pause e ofereça tentar o sensor ou seguir por toque.
+• Para esta primeira versão, deixe a sacudida opcional fora do jogo. O teste principal é o controle combinado de direção e velocidade. Solicite apenas os recursos usados.
+
+4. Circuito de Interlagos com geometria rastreável
+
+• Obtenha durante o desenvolvimento a linha central do circuito principal atual do Autódromo José Carlos Pace, em São Paulo, a partir do OpenStreetMap. Nenhuma consulta ao mapa deve acontecer enquanto a pessoa joga. Aproveite uma geometria existente somente se sua origem puder ser conferida. Grave num comentário do HTML a fonte, a data da obtenção, a identificação dos segmentos usados e a transformação aplicada.
+• Se usar Overpass, um ponto de partida é a consulta abaixo. Ela retorna candidatos da região, incluindo possíveis desvios. Examine os nós e a continuidade antes de selecionar o percurso. Se uma instância não responder, tente uma exportação cartográfica do OSM para o mesmo recorte. Mantenha a busca limitada à área do circuito.
+
+[out:json][timeout:30];
+way["highway"="raceway"](-23.715,-46.708,-23.692,-46.684);
+out geom;
+
+• Encadeie os segmentos por extremidades compartilhadas. Exclua pit lane, acessos, kartódromo e variantes de traçado. Converta longitude e latitude para coordenadas métricas locais, com a correção da longitude pela latitude; trate a inversão vertical do Canvas apenas na projeção. Verifique um único contorno fechado, sentido anti-horário, largada na reta correta e comprimento da ordem de 4,3 km. Documente como conferiu o sentido e a aproximação ao S do Senna. O tamanho oficial de referência é 4.309 metros; o comprimento calculado do eixo cartográfico pode diferir ligeiramente.
+• Simplifique o traçado com tolerância pequena e preserve a forma do S e das curvas fechadas. Desenho da pista, grama, linha de chegada, minimapa, checkpoints e demonstração devem usar a mesma geometria. Relacione os nomes à posição real ao longo do percurso. A sequência da proposta é Reta dos Boxes, S do Senna, Curva do Sol, Reta Oposta, Descida do Lago, Ferradura, Laranjinha, Pinheirinho, Bico de Pato, Mergulho, Junção e Subida dos Boxes. Evite repartir a volta em doze fatias iguais.
+• Exiba “© colaboradores do OpenStreetMap” de forma legível, com link para a página de direitos autorais. Identifique a licença ODbL nos dados incorporados. Use geometria desenhada no Canvas, sem tiles, logos comerciais ou identidade oficial de campeonato.
+• Se realmente não conseguir obter a geometria, avance na física e nas telas com um circuito de teste identificado como provisório. Informe a pendência e o dado necessário para substituí-lo. Só exiba Interlagos como circuito concluído depois da verificação da origem e do percurso.
+
+5. Condução, grama e volta válida
+
+• Use posição, rumo e velocidade contínuos. Integre o movimento com passo temporal estável, limites de delta e escala coerente em metros. Exiba velocidade em km/h. Equilibre aderência, esterço dependente da velocidade, aceleração e frenagem para que o usuário consiga contornar o S inicial na sensibilidade média. Uma volta de demonstração deve caber em aproximadamente 90 segundos, conservando a forma da pista.
+• O carro é conduzido livremente pelo jogador. Calcule a distância ao segmento do eixo local para distinguir asfalto e grama usando a largura visível. Na grama, aumente o arrasto e reduza a tração, mas permita ao carro sair do repouso e voltar ao asfalto. Na transição asfalto → grama, dispare um único pulso curto de vibração, se disponível. Use margem de estabilização para evitar pulsos repetidos na borda. Mantenha o feedback visual mesmo sem vibração.
+• Use portais de passagem ordenados e verifique o cruzamento da linha de chegada pelo segmento percorrido pelo carro, na direção correta. Começar sobre a faixa, atravessá-la ao contrário, andar em círculos sobre ela ou cortar pelo miolo não pode completar a volta. Uma saída comum para a grama custa velocidade, mas permite retomar a volta pelos portais restantes. Se a pessoa se perder, permita reiniciar na pausa.
+• Use um cronômetro monotônico e exclua calibração, pausa e tempo com a aba oculta. Guarde em localStorage apenas tempos válidos de jogadores. Trate leitura inválida e falha de escrita sem interromper o jogo. Identifique o modo no resultado e separe os recordes de sensor e toque. A demonstração jamais estabelece recorde.
+
+6. Visual, ciclo do navegador e demonstração
+
+• Pista cinza sobre grama verde, bordas claras nas curvas, faixa de largada branca, carro retangular de cor contrastante com a frente inequívoca. A câmera acompanha o carro centralizado; ajuste o zoom para a pessoa conseguir enxergar e antecipar a próxima curva. O minimapa mostra o circuito inteiro e a posição atual. Cada nome de trecho surge por um instante ao entrar nele. Use PT-BR, fontes do sistema, poucos elementos e tamanhos adequados à área útil de um telefone em paisagem.
+• Redimensione o Canvas com a tela, limite a densidade de pixels se necessário e considere áreas de recorte do aparelho. Tente tela cheia, trava em paisagem e Wake Lock quando disponíveis e no momento permitido. Capture rejeições de cada recurso separadamente. Se a trava falhar, instrua “Gire o celular para jogar” e aceite que a pessoa faça isso manualmente. Ao ocultar a aba ou mudar de orientação, pause, limpe comandos presos e preserve a volta. Retome por uma ação explícita e recalibre se o eixo físico mudou.
+• Se o contexto bloquear sensores, houver recusa ou passarem dois segundos sem dados úteis, explique em uma frase o motivo conhecido. Ofereça automaticamente esquerda, direita, acelerar e frear por toque, com alvos grandes e multitoque real. Soltar, cancelar um toque ou perder o foco deve liberar o respectivo comando. No modo de toque, deixe um comando discreto de pausa separado dos pedais. Se o site estiver em HTTP fora de um contexto seguro, mostre a orientação para abrir o link HTTPS. Permita experimentar a demonstração mesmo assim.
+• Demonstração é uma ação explícita na capa. O carro percorre o mesmo traçado, mostra o minimapa e os nomes das curvas, freia no miolo e completa uma volta sozinho. Indique “Demonstração”, dispense permissões de sensores e permita sair de imediato. Reiniciar, sair e entrar de novo deve manter apenas um ciclo de animação, um conjunto de ouvintes e um único cronômetro.
+
+7. Confira antes de entregar
+
+Faça verificações proporcionais à atividade com as ferramentas disponíveis. Use temporários fora da pasta quando necessário. Priorize estes casos com resultado observável:
+
+1) A capa e o jogo abrem usando apenas index.html. A primeira tela explica os gestos e oferece acesso à demonstração sem pedir sensores.
+2) Leituras válidas, zero, nulas e ausentes seguem os caminhos corretos. Nas duas posições horizontais do smartphone, o esterço à direita e a aceleração têm o mesmo significado. Teste também acelerar e esterçar juntos e recalibrar em outro ângulo.
+3) Uma saída para a grama desacelera, uma nova entrada recupera a tração e cada saída produz no máximo um pulso. O carro consegue voltar à pista.
+4) Uma volta correta funciona; cruzar a linha imediatamente após a largada, cortar trecho ou cruzar de trás para a frente falha. Repetir e recalibrar reiniciam os estados apropriados.
+5) O toque permite completar uma volta com o sensor bloqueado. A demonstração termina, mostra a pista e preserva os recordes do usuário.
+6) Ao trocar de aba ou girar a tela, o jogo pausa sem avanço invisível do carro ou do relógio. O recorde persiste ao recarregar; bloqueio do armazenamento não trava o resultado.
+
+Quando houver apenas Termux, teste a sintaxe e a lógica verificável sem fingir interação física. Separe o que foi demonstrado em software do que ainda precisa do smartphone real. Inclua na resposta um roteiro humano curto: abrir o link HTTPS, calibrar, virar para cada lado, acelerar e frear, pisar na grama, terminar a volta e, por fim, testar o espelhamento no projetor.
+
+Responda em português com o caminho exato de index.html, o que foi testado, a procedência da pista e o que ficou para o aparelho físico. Se houver bloqueio de ambiente, descreva o passo afetado. Pare depois da entrega local.
+
+Referências técnicas para consulta durante a implementação:
+• Orientação do dispositivo e permissões — https://developer.mozilla.org/en-US/docs/Web/API/Device_orientation_events/Detecting_device_orientation
+• Atribuição dos dados — https://www.openstreetmap.org/copyright
+• Atribuição em jogos — https://osmfoundation.org/wiki/Attribution_Guidelines
+• Pista oficial da Prefeitura de São Paulo — https://prefeitura.sp.gov.br/web/autodromodeinterlagos/pistaoficial
